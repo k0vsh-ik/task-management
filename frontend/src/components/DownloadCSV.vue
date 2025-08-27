@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// Record interface for prop type
+import type { TaskItem } from "@/types/models";
+
 interface Record {
   name: string;
   age: number;
@@ -8,7 +9,7 @@ interface Record {
 
 // Define component props
 const props = defineProps<{
-  data: Record[];
+  data: TaskItem[];
 }>();
 
 // Download data as CSV

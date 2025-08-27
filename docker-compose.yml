@@ -1,3 +1,34 @@
 services:
-  # TODO: Define backend, frontend, and microservice services here
+  frontend:
+    build: ./frontend
+    container_name: vue_frontend
+    ports:
+      - "5173:5173" 
+    depends_on:
+      - backend
+      - rust-service
+    environment:
+      - VITE_API_URL=http://backend:8000
+      - VITE_RUST_API_URL=http://rust-service:8080
+    networks:
+      - app-network
 
+  backend:
+    build: ./backend
+    container_name: fastapi_backend
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+
+  rust-service:
+    build: ./microservice
+    container_name: rust_axum_service
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
-import Task from './Task.vue';
-import TaskModal from './TaskModal.vue';
-import Pagination from './Pagination.vue';
 import { useTasks } from '@/composables/useTasks.js';
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal.vue";
 import DownloadCSV from "@/components/DownloadCSV.vue";
+import type {TaskItem} from "@/types/models";
+import Task from "@/components/Task.vue";
+import Pagination from "@/components/Pagination.vue";
+import TaskModal from "@/components/TaskModal.vue";
 
 // Tasks composable
 const { tasks, totalTasks, fetchTasks, deleteTask, saveTask } = useTasks();
@@ -18,7 +19,7 @@ const totalPages = computed(() => Math.ceil(totalTasks.value / pageSize.value));
 // Modal and editing state
 const showModal = ref(false);
 const isEditing = ref(false);
-const editingTask = ref(null);
+const editingTask = ref<TaskItem | null>(null);
 
 // Status filter
 const statusFilter = ref<string | null>(null);
@@ -32,21 +33,21 @@ function openAddModal() {
 }
 
 // Open edit task modal
-function openEditModal(task) {
+function openEditModal(task: TaskItem) {
   isEditing.value = true;
   editingTask.value = task;
   showModal.value = true;
 }
 
 // Save task handler
-async function handleSave(newTaskData) {
+async function handleSave(newTaskData: TaskItem) {
   await saveTask(newTaskData, isEditing.value, editingTask.value?.id);
   await fetchTasks(currentPage.value, pageSize.value);
   showModal.value = false;
 }
 
 // Delete task handler
-async function handleDelete(taskId) {
+async function handleDelete(taskId: number) {
   await deleteTask(taskId);
   await fetchTasks(currentPage.value, pageSize.value);
 }
