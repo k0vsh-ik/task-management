@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { TaskItem } from "@/types/models";
 
+const API_URL = import.meta.env.VITE_MICROSERVICE_URL;
+
 interface Record {
   name: string;
   age: number;
@@ -16,7 +18,7 @@ const props = defineProps<{
 async function downloadCSV() {
   console.log(props.data);
 
-  const response = await fetch("http://127.0.0.1:8080/convert", {
+  const response = await fetch(`${API_URL}/convert`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"

@@ -48,3 +48,8 @@ Thumbs.db
 *.sublime-workspace
 *.sublime-project
 
+# ------------------------------
+# LocalStack
+# ------------------------------
+.localstack/
+.localstack_data/

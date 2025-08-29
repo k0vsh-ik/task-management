@@ -1,66 +1,88 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
-import { useTasks } from '@/composables/useTasks.js';
-import ConfirmDeleteModal from "@/components/ConfirmDeleteModal.vue";
-import DownloadCSV from "@/components/DownloadCSV.vue";
-import type {TaskItem} from "@/types/models";
-import Task from "@/components/Task.vue";
-import Pagination from "@/components/Pagination.vue";
-import TaskModal from "@/components/TaskModal.vue";
+import { ref, computed, onMounted, watch } from "vue";
+import type { TaskItem } from "@/types/models";
+import { useTasks } from "@/composables/useTasks";
+import { useTaskWS } from "@/composables/useTaskWS";
 
+import Pagination from "@/components/Pagination.vue";
+import Task from "@/components/Task.vue";
+import TaskModal from "@/components/TaskModal.vue";
+import ConfirmDeleteModal from "@/components/ConfirmDeleteModal.vue";
+
+// ---------------------------------
 // Tasks composable
+// ---------------------------------
 const { tasks, totalTasks, fetchTasks, deleteTask, saveTask } = useTasks();
 
-// Pagination state
+// ---------------------------------
+// Pagination & Filter
+// ---------------------------------
 const currentPage = ref(1);
 const pageSize = ref(10);
 const totalPages = computed(() => Math.ceil(totalTasks.value / pageSize.value));
 
-// Modal and editing state
+const statusFilter = ref<string | null>(null);
+const statusOptions = ["To Do", "In Progress", "Done"];
+
+// ---------------------------------
+// Modal & Editing
+// ---------------------------------
 const showModal = ref(false);
 const isEditing = ref(false);
 const editingTask = ref<TaskItem | null>(null);
 
-// Status filter
-const statusFilter = ref<string | null>(null);
-const statusOptions = ["To Do", "In Progress", "Done"];
+const showDeleteModal = ref(false);
+const taskToDelete = ref<number | null>(null);
 
-// Open add task modal
+// ---------------------------------
+// WebSocket
+// ---------------------------------
+useTaskWS(tasks, totalTasks, currentPage, pageSize, statusFilter, fetchTasks);
+
+// ---------------------------------
+// Initial fetch
+// ---------------------------------
+onMounted(() => fetchTasks(currentPage.value, pageSize.value, statusFilter.value));
+
+// ---------------------------------
+// Watch status filter
+// ---------------------------------
+watch(statusFilter, async () => {
+  currentPage.value = 1;
+  await fetchTasks(currentPage.value, pageSize.value, statusFilter.value);
+});
+
+// ---------------------------------
+// Pagination handler
+// ---------------------------------
+async function onPageChange(page: number) {
+  currentPage.value = page;
+  await fetchTasks(page, pageSize.value, statusFilter.value);
+}
+
+// ---------------------------------
+// CRUD handlers
+// ---------------------------------
 function openAddModal() {
   isEditing.value = false;
   editingTask.value = null;
   showModal.value = true;
 }
 
-// Open edit task modal
 function openEditModal(task: TaskItem) {
   isEditing.value = true;
   editingTask.value = task;
   showModal.value = true;
 }
 
-// Save task handler
-async function handleSave(newTaskData: TaskItem) {
-  await saveTask(newTaskData, isEditing.value, editingTask.value?.id);
-  await fetchTasks(currentPage.value, pageSize.value);
+async function handleSave(taskData: TaskItem) {
+  await saveTask(taskData, isEditing.value, editingTask.value?.id ?? null);
   showModal.value = false;
-}
+  editingTask.value = null;
 
-// Delete task handler
-async function handleDelete(taskId: number) {
-  await deleteTask(taskId);
-  await fetchTasks(currentPage.value, pageSize.value);
+  // Перезагружаем текущую страницу
+  await fetchTasks(currentPage.value, pageSize.value, statusFilter.value);
 }
-
-// Handle page change
-function onPageChange(page: number) {
-  currentPage.value = page;
-  fetchTasks(page, pageSize.value, statusFilter.value);
-}
-
-// Delete confirmation modal state
-const showDeleteModal = ref(false);
-const taskToDelete = ref<number | null>(null);
 
 function confirmDelete(taskId: number) {
   taskToDelete.value = taskId;
@@ -70,9 +92,11 @@ function confirmDelete(taskId: number) {
 async function handleDeleteConfirm() {
   if (taskToDelete.value !== null) {
     await deleteTask(taskToDelete.value);
-    await fetchTasks(currentPage.value, pageSize.value);
-    taskToDelete.value = null;
     showDeleteModal.value = false;
+    taskToDelete.value = null;
+
+    // Перезагружаем текущую страницу
+    await fetchTasks(currentPage.value, pageSize.value, statusFilter.value);
   }
 }
 
@@ -80,20 +104,12 @@ function handleDeleteCancel() {
   taskToDelete.value = null;
   showDeleteModal.value = false;
 }
-
-// Watch for status filter changes
-watch(statusFilter, () => {
-  currentPage.value = 1; // reset page
-  fetchTasks(currentPage.value, pageSize.value, statusFilter.value);
-});
-
-// Fetch tasks on mount
-onMounted(() => fetchTasks(currentPage.value, pageSize.value, statusFilter.value));
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-100 flex flex-col items-center">
     <main class="w-full max-w-5xl mt-10 p-6 bg-white rounded-lg shadow-lg">
+
       <!-- Header -->
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold text-gray-700">Your Tasks</h2>
@@ -114,13 +130,9 @@ onMounted(() => fetchTasks(currentPage.value, pageSize.value, statusFilter.value
             <th class="px-4 py-2 text-left text-gray-700 font-semibold">Title</th>
             <th class="px-4 py-2 text-left text-gray-700 font-semibold">Description</th>
             <th class="px-4 py-2 text-left text-gray-700 font-semibold">
-              <select v-model="statusFilter">
+              <select v-model="statusFilter" class="border rounded px-2 py-1">
                 <option :value="null">Status</option>
-                <option
-                    v-for="status in statusOptions"
-                    :key="status"
-                    :value="status"
-                >
+                <option v-for="status in statusOptions" :key="status" :value="status">
                   {{ status }}
                 </option>
               </select>
@@ -152,7 +164,7 @@ onMounted(() => fetchTasks(currentPage.value, pageSize.value, statusFilter.value
         Total Tasks: {{ totalTasks }}
       </div>
 
-      <!-- Task modal -->
+      <!-- Task Modal -->
       <TaskModal
           v-if="showModal"
           :task="editingTask"
@@ -161,16 +173,14 @@ onMounted(() => fetchTasks(currentPage.value, pageSize.value, statusFilter.value
           @close="showModal = false"
       />
 
-      <!-- Download CSV -->
-      <DownloadCSV :data="tasks" />
+      <!-- Delete Confirmation Modal -->
+      <ConfirmDeleteModal
+          v-if="showDeleteModal"
+          :show="showDeleteModal"
+          message="Are you sure you want to delete this task?"
+          @confirm="handleDeleteConfirm"
+          @cancel="handleDeleteCancel"
+      />
     </main>
-
-    <!-- Delete confirmation modal -->
-    <ConfirmDeleteModal
-        :show="showDeleteModal"
-        message="Are you sure you want to delete this task?"
-        @confirm="handleDeleteConfirm"
-        @cancel="handleDeleteCancel"
-    />
   </div>
 </template>
