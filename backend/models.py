@@ -12,4 +12,4 @@ class Task(Base):
     title = Column(String, nullable=False)             # Task title
     description = Column(String, default="")          # Task description
     status = Column(String, nullable=False)           # Task status
-    created_at = Column(DateTime, default=datetime.utcnow)  # Creation timestamp
+    created_at = Column(DateTime, default=datetime.now())  # Creation timestamp
