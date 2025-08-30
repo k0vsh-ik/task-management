@@ -32,13 +32,11 @@ async fn main() {
         .route("/convert", post(convert_to_csv))
         .layer(cors);
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
+    let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+    let addr: SocketAddr = format!("0.0.0.0:{}", port).parse().unwrap();
     println!("Server running on http://{}", addr);
 
-    // Bind TCP listener
     let listener = TcpListener::bind(addr).await.unwrap();
-
-    // Start the Axum server
     axum::serve(listener, app).await.unwrap();
 }
 
