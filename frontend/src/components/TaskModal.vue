@@ -100,6 +100,7 @@ function saveTask() {
 
       <input
           v-model="localTask.title"
+          name="title"
           type="text"
           placeholder="Title"
           :class="[
@@ -110,6 +111,7 @@ function saveTask() {
 
       <textarea
           v-model="localTask.description"
+          name="description"
           placeholder="Description"
           :class="[
         'w-full px-3 py-2 border rounded mb-3 focus:outline-none focus:ring-2',
@@ -127,9 +129,10 @@ function saveTask() {
       </select>
 
       <div class="flex justify-end space-x-2">
-        <button @click="handleClose" class="px-4 py-2 rounded border hover:bg-gray-100">Cancel</button>
+        <button name="cancelbtn" @click="handleClose" class="px-4 py-2 rounded border hover:bg-gray-100">Cancel</button>
 
         <button
+            name="savebtn"
             @click="handleSaveClick"
             :class="[
           'px-4 py-2 rounded text-white',

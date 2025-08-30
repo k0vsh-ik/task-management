@@ -1,0 +1,88 @@
+name: CI/CD Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # ==========================
+      # FRONTEND
+      # ==========================
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Run Frontend Unit Tests
+        run: |
+          cd frontend
+          npm run test:unit  
+
+      - name: Run Frontend E2E Tests
+        run: |
+          cd frontend
+          npm run test:e2e 
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+
+      # ==========================
+      # BACKEND
+      # ==========================
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Run Backend Unit Tests
+        run: |
+          cd backend
+          pytest tests/unit  # пример, указываем папку с юнит тестами
+
+      - name: Run Backend E2E Tests
+        run: |
+          cd backend
+          pytest tests/e2e   # пример, указываем папку с e2e тестами
+
+      # ==========================
+      # DEPLOYMENT
+      # ==========================
+      - name: Deploy Vercel Frontend
+        env:
+          deploy_url: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          curl "$deploy_url"
+
+      - name: Deploy Render Backend
+        env:
+          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          curl "$deploy_url"
+
+        
+      - name: Deploy Render Microservice
+        env:
+          deploy_url: ${{ secrets.RENDER_MICROSERVICE_DEPLOY_HOOK_URL }}  
+        run: |
+          curl "$deploy_url"

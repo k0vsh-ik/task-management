@@ -7,6 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
+use axum::routing::get;
 use csv::WriterBuilder;
 use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
@@ -30,6 +31,7 @@ async fn main() {
 
     // Build the application router
     let app = Router::new()
+        .route("/", get("Hello, World!"))
         .route("/convert", post(convert_to_csv))
         .layer(cors);
 

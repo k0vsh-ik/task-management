@@ -8,6 +8,7 @@ import Pagination from "@/components/Pagination.vue";
 import Task from "@/components/Task.vue";
 import TaskModal from "@/components/TaskModal.vue";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal.vue";
+import DownloadCSV from "@/components/DownloadCSV.vue";
 
 // ---------------------------------
 // Tasks composable
@@ -181,6 +182,8 @@ function handleDeleteCancel() {
           @confirm="handleDeleteConfirm"
           @cancel="handleDeleteCancel"
       />
+
+      <DownloadCSV :data="tasks" />
     </main>
   </div>
 </template>
