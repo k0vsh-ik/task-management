@@ -30,7 +30,10 @@ jobs:
       - name: Run Frontend Unit Tests
         run: |
           cd frontend
-          npm run test:unit  
+          npm run test:unit 
+          
+      - name: Install Playwright Browsers
+        run: npx playwright install
 
       - name: Run Frontend E2E Tests
         run: |
