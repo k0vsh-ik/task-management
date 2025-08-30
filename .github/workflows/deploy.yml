@@ -25,20 +25,22 @@ jobs:
       - name: Install Frontend Dependencies
         run: |
           cd frontend
-          npm install
+          npm ci
 
       - name: Run Frontend Unit Tests
         run: |
           cd frontend
-          npm run test:unit 
-          
+          npm run test:unit
+
       - name: Install Playwright Browsers
-        run: npx playwright install
+        run: |
+          cd frontend
+          npx playwright install
 
       - name: Run Frontend E2E Tests
         run: |
           cd frontend
-          npm run test:e2e 
+          npx playwright test --web-server "npm run dev" --port 5173
 
       - name: Build Frontend
         run: |
