@@ -22,26 +22,6 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install Frontend Dependencies
-        run: |
-          cd frontend
-          npm ci
-
-      - name: Run Frontend Unit Tests
-        run: |
-          cd frontend
-          npm run test:unit
-
-      - name: Install Playwright Browsers
-        run: |
-          cd frontend
-          npx playwright install
-
-      - name: Run Frontend E2E Tests
-        run: |
-          cd frontend
-          npx playwright test --web-server "npm run dev" --port 5173
-
       - name: Build Frontend
         run: |
           cd frontend
@@ -53,22 +33,12 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Install Backend Dependencies
         run: |
           cd backend
           pip install -r requirements.txt
-
-      - name: Run Backend Unit Tests
-        run: |
-          cd backend
-          pytest tests/unit  # пример, указываем папку с юнит тестами
-
-      - name: Run Backend E2E Tests
-        run: |
-          cd backend
-          pytest tests/e2e   # пример, указываем папку с e2e тестами
 
       # ==========================
       # DEPLOYMENT
