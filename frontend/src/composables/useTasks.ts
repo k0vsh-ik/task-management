@@ -10,19 +10,18 @@ export function useTasks() {
     const message = ref<string | null>(null);
     const isError = ref(false);
 
-    const showMessage = (text: string, error = false) => {
+    const showMessage = (text: string, error = false, duration = 3000) => {
         message.value = text;
         isError.value = error;
-        setTimeout(() => {
-            message.value = null;
-        }, 3000);
+        setTimeout(() => (message.value = null), duration);
     };
 
     const fetchTasks = async (page = 1, pageSize = 10, status: string | null = null) => {
         try {
             const skip = (page - 1) * pageSize;
-            const params: any = { skip, limit: pageSize };
+            const params: Record<string, any> = { skip, limit: pageSize };
             if (status) params.status = status;
+
             const res = await axios.get(`${API_URL}/api/tasks`, { params });
             tasks.value = res.data.tasks.map((t: TaskItem) => ({
                 ...t,
@@ -31,16 +30,18 @@ export function useTasks() {
             totalTasks.value = res.data.total;
         } catch (err) {
             showMessage('Loading Task Error', true);
+            console.error(err);
         }
     };
 
     const deleteTask = async (id: number) => {
         try {
             await axios.delete(`${API_URL}/api/tasks/${id}`);
-            showMessage('Task is deleted successfully');
+            showMessage('Task deleted successfully');
             await fetchTasks();
         } catch (err) {
             showMessage('Deleting Task Error', true);
+            console.error(err);
         }
     };
 
@@ -48,14 +49,15 @@ export function useTasks() {
         try {
             if (isEdit && taskId) {
                 await axios.put(`${API_URL}/api/tasks/${taskId}`, taskData);
-                showMessage('Task is edited successfully');
+                showMessage('Task edited successfully');
             } else {
                 await axios.post(`${API_URL}/api/tasks`, taskData);
-                showMessage('Task is created successfully');
+                showMessage('Task created successfully');
             }
             await fetchTasks();
         } catch (err) {
             showMessage('Saving Task Error', true);
+            console.error(err);
         }
     };
 
@@ -66,6 +68,6 @@ export function useTasks() {
         isError,
         fetchTasks,
         deleteTask,
-        saveTask
+        saveTask,
     };
 }

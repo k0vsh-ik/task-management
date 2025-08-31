@@ -3,49 +3,37 @@ import type { TaskItem } from "@/types/models";
 
 const API_URL = import.meta.env.VITE_MICROSERVICE_URL;
 
-interface Record {
-  name: string;
-  age: number;
-  city: string;
-}
+defineProps<{ data: TaskItem[] }>();
 
-// Define component props
-const props = defineProps<{
-  data: TaskItem[];
-}>();
+async function downloadCSV(data: TaskItem[]) {
+  try {
+    const response = await fetch(`${API_URL}/convert`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
 
-// Download data as CSV
-async function downloadCSV() {
-  console.log(props.data);
+    if (!response.ok) throw new Error("Failed to download CSV");
 
-  const response = await fetch(`${API_URL}/convert`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(props.data)
-  });
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
 
-  if (!response.ok) {
-    alert("Failed to download CSV");
-    return;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "data.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    alert(err instanceof Error ? err.message : "Unknown error");
   }
-
-  const blob = await response.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "data.csv";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
 }
 </script>
 
 <template>
   <div>
-    <button @click="downloadCSV" class="pi pi-download">
+    <button @click="downloadCSV($props.data)" class="pi pi-download">
       Download CSV
     </button>
   </div>

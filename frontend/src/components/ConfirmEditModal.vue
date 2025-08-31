@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-const props = defineProps<{
+defineProps<{
   show: boolean;
   message: string;
 }>();
@@ -10,12 +10,10 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
 }>();
 
-// Emit confirm event
 function handleConfirm() {
   emit('confirm');
 }
 
-// Emit cancel event
 function handleCancel() {
   emit('cancel');
 }
@@ -31,14 +29,14 @@ function handleCancel() {
       <p class="mb-6">{{ message }}</p>
       <div class="flex justify-end gap-3">
         <button
-            name="cancelconfirmbtn"
+            name="cancelSaveButton"
             @click="handleCancel"
             class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
         >
           Cancel
         </button>
         <button
-            name="confirmbtn"
+            name="confirmSaveButton"
             @click="handleConfirm"
             class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >

@@ -23,13 +23,11 @@ struct Record {
 
 #[tokio::main]
 async fn main() {
-    // Configure CORS to allow all origins, methods, and headers (for testing)
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
         .allow_headers(Any);
 
-    // Build the application router
     let app = Router::new()
         .route("/", get("Hello, World!"))
         .route("/convert", post(convert_to_csv))
@@ -43,7 +41,6 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-// Convert JSON records to CSV and return as attachment
 async fn convert_to_csv(Json(records): Json<Vec<Record>>) -> Response {
     let mut wtr = WriterBuilder::new().from_writer(vec![]);
 

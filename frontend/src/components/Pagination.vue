@@ -1,53 +1,48 @@
-<script setup>
+<script setup lang="ts">
+import {computed} from "vue";
 
-// Define component props
-const props = defineProps({
-  currentPage: Number,
-  totalPages: Number,
-});
+const { currentPage, totalPages } = defineProps<{
+  currentPage: number;
+  totalPages: number;
+}>();
 
-// Define component emits
-const emits = defineEmits(['changePage']);
+const emit = defineEmits<(e: 'changePage', page: number) => void>();
 
-// Compute pages to display in pagination
-function pagesToShow() {
-  const pages = [];
+const pagesToShow = computed(() => {
+  const pages: (number | string)[] = [];
 
-  if (props.totalPages <= 5) {
-    for (let i = 1; i <= props.totalPages; i++) pages.push(i);
+  if (totalPages <= 5) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
   } else {
     pages.push(1);
 
-    if (props.currentPage > 3) pages.push('...');
+    if (currentPage > 3) pages.push('...');
 
     for (
-        let i = Math.max(2, props.currentPage - 1);
-        i <= Math.min(props.totalPages - 1, props.currentPage + 1);
+        let i = Math.max(2, currentPage - 1);
+        i <= Math.min(totalPages - 1, currentPage + 1);
         i++
     ) {
       pages.push(i);
     }
 
-    if (props.currentPage < props.totalPages - 2) pages.push('...');
-    pages.push(props.totalPages);
+    if (currentPage < totalPages - 2) pages.push('...');
+    pages.push(totalPages);
   }
 
   return pages;
-}
+});
 
-// Emit page change
-function goToPage(page) {
-  if (page !== '...') {
-    emits('changePage', page);
-  }
+function goToPage(page: number | string) {
+  if (typeof page === 'number') emit('changePage', page);
 }
 </script>
 
 <template>
   <div class="flex justify-center mt-4 space-x-2">
     <button
-        v-for="page in pagesToShow()"
-        :key="page + Math.random()"
+        v-for="page in pagesToShow"
+        :key="page"
         @click="goToPage(page)"
         :class="[
         'px-3 py-1 rounded border transition',

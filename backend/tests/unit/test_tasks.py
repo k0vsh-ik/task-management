@@ -1,23 +1,20 @@
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, StaticPool
 from sqlalchemy.orm import sessionmaker
 
-from app.database import Base
-from app.main import get_db, app
+from app.database import Base, get_db
+from app.main import app
 
-# ------------------------------
-# Setup in-memory SQLite for tests
-# ------------------------------
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     connect_args={"check_same_thread": False},
-    poolclass=StaticPool  # <-- ensures same connection for all sessions
+    poolclass=StaticPool
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Override the get_db dependency
 def override_get_db():
     db = TestingSessionLocal()
     try:
@@ -25,19 +22,12 @@ def override_get_db():
     finally:
         db.close()
 
-# Make sure the app uses the test DB
 app.dependency_overrides[get_db] = override_get_db
 
-# Create tables in the test DB
 Base.metadata.create_all(bind=engine)
 
-# Use test client
-from fastapi.testclient import TestClient
 client = TestClient(app)
 
-# ------------------------------tTh
-# Fixtures
-# ------------------------------
 @pytest.fixture(autouse=True)
 def setup_database():
     Base.metadata.drop_all(bind=engine)
@@ -45,9 +35,7 @@ def setup_database():
     yield
     Base.metadata.drop_all(bind=engine)
 
-# ------------------------------
-# Helper function
-# ------------------------------
+
 def create_sample_task():
     response = client.post(
         "/api/tasks",
@@ -55,9 +43,6 @@ def create_sample_task():
     )
     return response.json()
 
-# ------------------------------
-# Tests
-# ------------------------------
 
 def test_create_task():
     response = client.post(
@@ -98,6 +83,7 @@ def test_list_tasks_with_wrong_filter():
     response = client.get("/api/tasks?status=Invalid")
     assert response.status_code == 400
 
+
 def test_list_tasks_with_filter():
     create_sample_task()
     response = client.get("/api/tasks?status=To Do")
@@ -107,6 +93,7 @@ def test_list_tasks_with_filter():
 
     response = client.get("/api/tasks?status=In Progress")
     assert response.status_code == 200
+
 
 def test_update_task():
     task = create_sample_task()

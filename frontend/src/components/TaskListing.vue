@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import type { TaskItem } from "@/types/models";
+
 import { useTasks } from "@/composables/useTasks";
 import { useTaskWS } from "@/composables/useTaskWS";
 
@@ -11,14 +12,8 @@ import ConfirmDeleteModal from "@/components/ConfirmDeleteModal.vue";
 import DownloadCSV from "@/components/DownloadCSV.vue";
 import Notification from "@/components/Notification.vue";
 
-// ---------------------------------
-// Tasks composable
-// ---------------------------------
 const { tasks, totalTasks, fetchTasks, deleteTask, saveTask, message, isError } = useTasks();
 
-// ---------------------------------
-// Pagination & Filter
-// ---------------------------------
 const currentPage = ref(1);
 const pageSize = ref(10);
 const totalPages = computed(() => Math.ceil(totalTasks.value / pageSize.value));
@@ -26,9 +21,11 @@ const totalPages = computed(() => Math.ceil(totalTasks.value / pageSize.value));
 const statusFilter = ref<string | null>(null);
 const statusOptions = ["To Do", "In Progress", "Done"];
 
-// ---------------------------------
-// Modal & Editing
-// ---------------------------------
+watch(statusFilter, async () => {
+  currentPage.value = 1;
+  await fetchTasks(currentPage.value, pageSize.value, statusFilter.value);
+});
+
 const showModal = ref(false);
 const isEditing = ref(false);
 const editingTask = ref<TaskItem | null>(null);
@@ -36,35 +33,6 @@ const editingTask = ref<TaskItem | null>(null);
 const showDeleteModal = ref(false);
 const taskToDelete = ref<number | null>(null);
 
-// ---------------------------------
-// WebSocket
-// ---------------------------------
-useTaskWS(tasks, totalTasks, currentPage, pageSize, statusFilter, fetchTasks);
-
-// ---------------------------------
-// Initial fetch
-// ---------------------------------
-onMounted(() => fetchTasks(currentPage.value, pageSize.value, statusFilter.value));
-
-// ---------------------------------
-// Watch status filter
-// ---------------------------------
-watch(statusFilter, async () => {
-  currentPage.value = 1;
-  await fetchTasks(currentPage.value, pageSize.value, statusFilter.value);
-});
-
-// ---------------------------------
-// Pagination handler
-// ---------------------------------
-async function onPageChange(page: number) {
-  currentPage.value = page;
-  await fetchTasks(page, pageSize.value, statusFilter.value);
-}
-
-// ---------------------------------
-// CRUD handlers
-// ---------------------------------
 function openAddModal() {
   isEditing.value = false;
   editingTask.value = null;
@@ -81,7 +49,6 @@ async function handleSave(taskData: TaskItem) {
   await saveTask(taskData, isEditing.value, editingTask.value?.id ?? null);
   showModal.value = false;
   editingTask.value = null;
-
   await fetchTasks(currentPage.value, pageSize.value, statusFilter.value);
 }
 
@@ -95,7 +62,6 @@ async function handleDeleteConfirm() {
     await deleteTask(taskToDelete.value);
     showDeleteModal.value = false;
     taskToDelete.value = null;
-
     await fetchTasks(currentPage.value, pageSize.value, statusFilter.value);
   }
 }
@@ -104,6 +70,15 @@ function handleDeleteCancel() {
   taskToDelete.value = null;
   showDeleteModal.value = false;
 }
+
+async function onPageChange(page: number) {
+  currentPage.value = page;
+  await fetchTasks(page, pageSize.value, statusFilter.value);
+}
+
+useTaskWS(tasks, totalTasks, currentPage, pageSize, statusFilter, fetchTasks);
+
+onMounted(() => fetchTasks(currentPage.value, pageSize.value, statusFilter.value));
 </script>
 
 <template>
@@ -113,34 +88,28 @@ function handleDeleteCancel() {
     <div class="flex flex-col justify-center h-1/2 w-full max-w-5xl p-6">
       <div class="flex justify-between items-center">
         <h2 class="text-2xl font-bold text-gray-700">Your Tasks</h2>
-        <button
-            @click="openAddModal"
-            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-        >
+        <button @click="openAddModal" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
           + Add Task
         </button>
       </div>
     </div>
 
     <main class="w-full max-w-5xl pl-6 pr-6 pb-6 bg-white rounded-lg shadow-lg">
-      <!-- Tasks table -->
       <div class="overflow-x-auto">
         <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden">
           <thead class="bg-gray-100">
           <tr>
-            <th class="px-4 py-2 text-left text-gray-700 font-semibold">ID</th>
-            <th class="px-4 py-2 text-left text-gray-700 font-semibold">Title</th>
-            <th class="px-4 py-2 text-left text-gray-700 font-semibold">Description</th>
-            <th class="px-4 py-2 text-left text-gray-700 font-semibold">
+            <th class="px-4 py-2 text-left font-semibold text-gray-700">ID</th>
+            <th class="px-4 py-2 text-left font-semibold text-gray-700">Title</th>
+            <th class="px-4 py-2 text-left font-semibold text-gray-700">Description</th>
+            <th class="px-4 py-2 text-left font-semibold text-gray-700">
               <select v-model="statusFilter" class="border rounded px-2 py-1">
                 <option :value="null">Status</option>
-                <option v-for="status in statusOptions" :key="status" :value="status">
-                  {{ status }}
-                </option>
+                <option v-for="status in statusOptions" :key="status" :value="status">{{ status }}</option>
               </select>
             </th>
-            <th class="px-4 py-2 text-left text-gray-700 font-semibold">Created Date</th>
-            <th class="px-4 py-2 text-right text-gray-700 font-semibold">Actions</th>
+            <th class="px-4 py-2 text-left font-semibold text-gray-700">Created Date</th>
+            <th class="px-4 py-2 text-right font-semibold text-gray-700">Actions</th>
           </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
@@ -149,14 +118,14 @@ function handleDeleteCancel() {
               :key="task.id"
               :task="task"
               @edit="openEditModal"
-              @delete="confirmDelete(task.id)"
+              @delete="() => confirmDelete(task.id)"
           />
           </tbody>
         </table>
       </div>
 
-      <!-- Pagination -->
-      <Pagination class="pt-6"
+      <Pagination
+          class="pt-6"
           :currentPage="currentPage"
           :totalPages="totalPages"
           @changePage="onPageChange"
@@ -166,7 +135,6 @@ function handleDeleteCancel() {
         Total Tasks: {{ totalTasks }}
       </div>
 
-      <!-- Task Modal -->
       <TaskModal
           v-if="showModal"
           :task="editingTask"
@@ -175,7 +143,6 @@ function handleDeleteCancel() {
           @close="showModal = false"
       />
 
-      <!-- Delete Confirmation Modal -->
       <ConfirmDeleteModal
           v-if="showDeleteModal"
           :show="showDeleteModal"

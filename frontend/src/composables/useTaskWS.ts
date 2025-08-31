@@ -12,26 +12,28 @@ export function useTaskWS(
 ) {
     let socket: WebSocket | null = null;
 
+    const handleMessage = async (event: MessageEvent) => {
+        try {
+            const data = JSON.parse(event.data);
+            const { event: evt, task} = data;
+            console.log("Received data:", data);
+
+            const passesFilter = !statusFilter.value || task?.status === statusFilter.value;
+
+            if (!passesFilter) return;
+
+            if (["created", "updated", "deleted"].includes(evt)) {
+                await fetchTasks(currentPage.value, pageSize.value, statusFilter.value);
+            }
+        } catch (err) {
+            console.error("Error handling WS message:", err);
+        }
+    };
+
     onMounted(() => {
         const wsUrl = import.meta.env.VITE_API_URL.replace(/^http/, "ws") + "/ws/tasks";
         socket = new WebSocket(wsUrl);
-
-        socket.onmessage = async (event) => {
-            const data = JSON.parse(event.data);
-            console.log("Received data", data);
-            const { event: evt, task, task_id } = data;
-
-            const passesFilter = !statusFilter.value || (task?.status === statusFilter.value);
-
-            switch (evt) {
-                case "created":
-                case "updated":
-                case "deleted":
-                    // Перезагружаем текущую страницу после любого события
-                    await fetchTasks(currentPage.value, pageSize.value, statusFilter.value);
-                    break;
-            }
-        };
+        socket.onmessage = handleMessage;
     });
 
     onUnmounted(() => {
