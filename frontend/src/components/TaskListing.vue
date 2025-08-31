@@ -9,11 +9,12 @@ import Task from "@/components/Task.vue";
 import TaskModal from "@/components/TaskModal.vue";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal.vue";
 import DownloadCSV from "@/components/DownloadCSV.vue";
+import Notification from "@/components/Notification.vue";
 
 // ---------------------------------
 // Tasks composable
 // ---------------------------------
-const { tasks, totalTasks, fetchTasks, deleteTask, saveTask } = useTasks();
+const { tasks, totalTasks, fetchTasks, deleteTask, saveTask, message, isError } = useTasks();
 
 // ---------------------------------
 // Pagination & Filter
@@ -81,7 +82,6 @@ async function handleSave(taskData: TaskItem) {
   showModal.value = false;
   editingTask.value = null;
 
-  // Перезагружаем текущую страницу
   await fetchTasks(currentPage.value, pageSize.value, statusFilter.value);
 }
 
@@ -96,7 +96,6 @@ async function handleDeleteConfirm() {
     showDeleteModal.value = false;
     taskToDelete.value = null;
 
-    // Перезагружаем текущую страницу
     await fetchTasks(currentPage.value, pageSize.value, statusFilter.value);
   }
 }
@@ -108,11 +107,11 @@ function handleDeleteCancel() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100 flex flex-col items-center">
-    <main class="w-full max-w-5xl mt-10 p-6 bg-white rounded-lg shadow-lg">
+  <div class="min-h-screen flex flex-col items-center">
+    <Notification :message="message" :isError="isError" />
 
-      <!-- Header -->
-      <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col justify-center h-1/2 w-full max-w-5xl p-6">
+      <div class="flex justify-between items-center">
         <h2 class="text-2xl font-bold text-gray-700">Your Tasks</h2>
         <button
             @click="openAddModal"
@@ -121,7 +120,9 @@ function handleDeleteCancel() {
           + Add Task
         </button>
       </div>
+    </div>
 
+    <main class="w-full max-w-5xl pl-6 pr-6 pb-6 bg-white rounded-lg shadow-lg">
       <!-- Tasks table -->
       <div class="overflow-x-auto">
         <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden">
@@ -155,7 +156,7 @@ function handleDeleteCancel() {
       </div>
 
       <!-- Pagination -->
-      <Pagination
+      <Pagination class="pt-6"
           :currentPage="currentPage"
           :totalPages="totalPages"
           @changePage="onPageChange"

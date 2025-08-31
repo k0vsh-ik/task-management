@@ -2,8 +2,8 @@ import pytest
 from sqlalchemy import create_engine, StaticPool
 from sqlalchemy.orm import sessionmaker
 
-from database import Base
-from main import get_db, app
+from app.database import Base
+from app.main import get_db, app
 
 # ------------------------------
 # Setup in-memory SQLite for tests

@@ -2,8 +2,8 @@ import pytest
 import time
 from fastapi.testclient import TestClient
 from httpx import AsyncClient, ASGITransport
-from main import app
-from database import Base, engine
+from app.main import app
+from app.database import Base, engine
 
 # -----------------------------
 # Setup / teardown DB

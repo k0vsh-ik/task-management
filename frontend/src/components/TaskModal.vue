@@ -92,9 +92,9 @@ function saveTask() {
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-gray-500/50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg w-96 p-6 relative">
-      <h3 class="text-lg font-semibold mb-4">
+  <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl w-96 p-8 relative shadow-xl transform transition-all scale-95 animate-fade-in">
+      <h3 class="text-xl font-bold mb-6 text-gray-800">
         {{ props.isEdit ? 'Edit Task' : 'Add New Task' }}
       </h3>
 
@@ -104,9 +104,9 @@ function saveTask() {
           type="text"
           placeholder="Title"
           :class="[
-        'w-full px-3 py-2 border rounded mb-3 focus:outline-none focus:ring-2',
-        localTask.title.trim() ? 'focus:ring-blue-400 border-gray-300' : 'border-red-500 focus:ring-red-400'
-      ]"
+          'w-full px-4 py-3 border rounded-lg mb-5 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors',
+          localTask.title.trim() ? 'focus:ring-blue-400 border-gray-300' : 'border-red-500 focus:ring-red-400'
+        ]"
       />
 
       <textarea
@@ -114,30 +114,36 @@ function saveTask() {
           name="description"
           placeholder="Description"
           :class="[
-        'w-full px-3 py-2 border rounded mb-3 focus:outline-none focus:ring-2',
-        localTask.description.trim() ? 'focus:ring-blue-400 border-gray-300' : 'border-red-500 focus:ring-red-400'
-      ]"
+          'w-full px-4 py-3 border rounded-lg mb-5 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors resize-none h-28',
+          localTask.description.trim() ? 'focus:ring-blue-400 border-gray-300' : 'border-red-500 focus:ring-red-400'
+        ]"
       ></textarea>
 
       <select
           v-model="localTask.status"
-          class="w-full px-3 py-2 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          class="w-full px-4 py-3 border rounded-lg mb-6 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors h-12"
       >
         <option>To Do</option>
         <option>In Progress</option>
         <option>Done</option>
       </select>
 
-      <div class="flex justify-end space-x-2">
-        <button name="cancelbtn" @click="handleClose" class="px-4 py-2 rounded border hover:bg-gray-100">Cancel</button>
+      <div class="flex justify-end space-x-3 mt-4">
+        <button
+            name="cancelbtn"
+            @click="handleClose"
+            class="px-5 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors"
+        >
+          Cancel
+        </button>
 
         <button
             name="savebtn"
             @click="handleSaveClick"
             :class="[
-          'px-4 py-2 rounded text-white',
-          isValid ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'
-        ]"
+            'px-5 py-2 rounded-lg text-white font-semibold transition-colors',
+            isValid ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'
+          ]"
         >
           {{ props.isEdit ? 'Save' : 'Add' }}
         </button>
@@ -152,3 +158,20 @@ function saveTask() {
     </div>
   </div>
 </template>
+
+<style>
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out forwards;
+}
+</style>

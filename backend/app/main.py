@@ -1,21 +1,22 @@
 from datetime import datetime
 from enum import Enum
+from typing import List
 
-from fastapi import FastAPI, Depends, HTTPException, Path, Query
+from fastapi import FastAPI, Depends, HTTPException, Path, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
 from pydantic import BaseModel, constr
+from sqlalchemy.orm import Session
 
-from database import SessionLocal, engine, Base
-import models
+import app.models as models
+from app.database import SessionLocal, engine, Base
 
 # -----------------------------
-# Database setup: create tables
+# Database setup
 # -----------------------------
 Base.metadata.create_all(bind=engine)
 
 # -----------------------------
-# FastAPI app initialization
+# FastAPI app
 # -----------------------------
 app = FastAPI(title="Task Management API")
 
@@ -32,16 +33,11 @@ class TaskStatus(str, Enum):
 # -----------------------------
 # CORS configuration
 # -----------------------------
-origins = [
-    "*"
-    # "http://localhost:5173",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # allow GET, POST, PUT, DELETE
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -60,11 +56,10 @@ class TaskSchema(BaseModel):
     status: str
     created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
+
 
 class TaskUpdate(BaseModel):
-    """Model for updating a task: all fields optional"""
     title: constr(min_length=1) | None = None
     description: constr(min_length=1) | None = None
     status: TaskStatus | None = None
@@ -80,41 +75,59 @@ def get_db():
         db.close()
 
 # -----------------------------
-# API endpoints
+# WebSocket connections
 # -----------------------------
+active_connections: List[WebSocket] = []
 
+async def broadcast(message: dict):
+    for connection in active_connections.copy():
+        try:
+            await connection.send_json(message)
+        except Exception:
+            if connection in active_connections:
+                active_connections.remove(connection)
+
+@app.websocket("/ws/tasks")
+async def ws_tasks(ws: WebSocket):
+    await ws.accept()
+    active_connections.append(ws)
+    try:
+        while True:
+            try:
+                await ws.receive_text()
+            except WebSocketDisconnect:
+                break
+    finally:
+        if ws in active_connections:
+            active_connections.remove(ws)
+
+
+# -----------------------------
+# CRUD endpoints
+# -----------------------------
 @app.get("/api/tasks")
-def list_tasks(
-    status: str | None = Query(None, description="Filter tasks by status"),
-    skip: int = Query(0, ge=0, description="Number of tasks to skip"),
-    limit: int = Query(10, gt=0, description="Maximum number of tasks to return"),
-    db: Session = Depends(get_db)
+async def list_tasks(
+        status: str | None = Query(None),
+        skip: int = Query(0, ge=0),
+        limit: int = Query(10, gt=0),
+        db: Session = Depends(get_db)
 ):
-    """Get list of tasks with optional status filter and pagination"""
     query = db.query(models.Task)
-
-    # Filter tasks by status if provided
     if status:
         if status not in TASK_STATUSES:
             raise HTTPException(status_code=400, detail="Invalid status")
         query = query.filter(models.Task.status == status)
 
-    # Count total tasks after filtering
+    # Сортировка по дате создания, новые записи сверху
+    query = query.order_by(models.Task.id.desc())
+
     total = query.count()
-
-    # Apply pagination
     tasks = query.offset(skip).limit(limit).all()
-
-    # Return tasks and total count
     return {"total": total, "tasks": tasks}
 
 
 @app.post("/api/tasks", response_model=TaskSchema)
-def create_task(task: TaskCreate, db: Session = Depends(get_db)):
-    """Create a new task"""
-    if task.status not in TASK_STATUSES:
-        raise HTTPException(status_code=400, detail="Invalid status")
-
+async def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     db_task = models.Task(
         title=task.title,
         description=task.description,
@@ -123,24 +136,26 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
+
+    await broadcast({
+        "event": "created",
+        "task": {
+            "id": db_task.id,
+            "title": db_task.title,
+            "description": db_task.description,
+            "status": db_task.status,
+            "created_at": db_task.created_at.isoformat()
+        }
+    })
+
     return db_task
 
-
 @app.put("/api/tasks/{task_id}", response_model=TaskSchema)
-def update_task(
-    task_id: int = Path(..., description="ID of the task to update"),
-    task: TaskUpdate = None,
-    db: Session = Depends(get_db)
-):
-    """Update an existing task"""
+async def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
     db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    if task.status and task.status not in TASK_STATUSES:
-        raise HTTPException(status_code=400, detail="Invalid status")
-
-    # Update fields if provided
     if task.title is not None:
         db_task.title = task.title
     if task.description is not None:
@@ -150,18 +165,32 @@ def update_task(
 
     db.commit()
     db.refresh(db_task)
+
+    await broadcast({
+        "event": "updated",
+        "task": {
+            "id": db_task.id,
+            "title": db_task.title,
+            "description": db_task.description,
+            "status": db_task.status,
+            "created_at": db_task.created_at.isoformat()
+        }
+    })
+
     return db_task
 
-
 @app.delete("/api/tasks/{task_id}")
-def delete_task(
-    task_id: int = Path(..., description="ID of the task to delete"),
-    db: Session = Depends(get_db)
-):
-    """Delete a task by ID"""
+async def delete_task(task_id: int, db: Session = Depends(get_db)):
     db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
+
     db.delete(db_task)
     db.commit()
+
+    await broadcast({
+        "event": "deleted",
+        "task_id": task_id
+    })
+
     return {"detail": "Task deleted"}

@@ -65,7 +65,7 @@ docker exec "$LOCALSTACK_CONTAINER" awslocal lambda get-function --function-name
 # Build frontend
 # ===============================
 echo "🏗 Building frontend..."
-cd "$FRONTEND_DIR" || { echo "❌ Folder $FRONTEND_DIR not found"; exit 1; }
+cd "../$FRONTEND_DIR" || { echo "❌ Folder $FRONTEND_DIR not found"; exit 1; }
 npm install
 npm run build
 cd ..
@@ -74,6 +74,7 @@ cd ..
 # Copy dist/ to LocalStack container
 # ===============================
 echo "⬆ Copying dist/ to LocalStack container..."
+echo "$DIST_DIR" "$LOCALSTACK_CONTAINER:$CONTAINER_DIST_PATH"
 docker cp "$DIST_DIR" "$LOCALSTACK_CONTAINER:$CONTAINER_DIST_PATH"
 
 # ===============================

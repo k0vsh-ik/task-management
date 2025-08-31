@@ -18,6 +18,7 @@ build/
 # ------------------------------
 node_modules/
 dist/
+test-results/
 npm-debug.log*
 yarn-error.log*
 .env.local

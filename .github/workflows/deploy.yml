@@ -46,6 +46,19 @@ jobs:
           pip install -r requirements.txt
 
       # ==========================
+      # RUST MICROSERVICE
+      # ==========================
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Build Rust Microservice
+        run: |
+          cd microservice
+          cargo build --release
+
+      # ==========================
       # DEPLOYMENT
       # ==========================
       - name: Deploy Vercel Frontend
