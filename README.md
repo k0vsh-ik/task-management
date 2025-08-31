@@ -13,11 +13,11 @@ A full-stack **Task Management Application** built with **Vue 3 (TypeScript)** f
 - **Delete Task** – with confirmation dialog
 - **Filter Tasks** – by status (`To Do`, `In Progress`, `Done`)
 - **Pagination** – when tasks exceed 10 items
-- **Responsive Design** – optimized for desktop and mobile
+- **Responsive Design** – works on desktop and adapts partially to smaller screens
 
 ### ✅ Backend
 - **Python (FastAPI)** – primary REST API for tasks
-- **Rust (Axum)** – microservice handling performance-critical endpoints
+- **Rust (Axum)** – handles CSV conversion functions
 - **Endpoints**:
     - `GET /api/tasks` – list tasks with pagination & filtering
     - `POST /api/tasks` – create new task
@@ -40,25 +40,13 @@ A full-stack **Task Management Application** built with **Vue 3 (TypeScript)** f
 
 ---
 
-## 🏗 Architecture
-
-Frontend (Vue 3 + TypeScript)
-|
-| REST + WebSockets
-v
-Backend API (FastAPI) <-> Rust Microservice (Axum)
-|
-| Database (optional, in-memory for demo)
-
-
----
-
 ## 🛠 Tech Stack
 
 **Frontend**:  
 - Vue 3, TypeScript, Vite  
 - Tailwind CSS  
-- Axios (API calls)  
+- Axios (API calls)
+- Vitest (Unit testing)
 - Playwright (E2E testing)  
 
 **Backend**:  
@@ -66,7 +54,7 @@ Backend API (FastAPI) <-> Rust Microservice (Axum)
 - Rust + Axum  
 - Pydantic (validation)  
 - SQLAlchemy or in-memory store  
-- pytest (unit tests)  
+- pytest (Unit and E2E testing)
 
 **Infrastructure**:  
 - Docker & Docker Compose  
@@ -77,14 +65,10 @@ Backend API (FastAPI) <-> Rust Microservice (Axum)
 
 ## ⚡ Installation & Setup
 
-### ✅ Clone the repository
+### ✅ Clone the repository and start Docker Compose
 ```bash
-git clone https://github.com/your-username/task-management-system.git
-cd task-management-system
-```
-
-**Development Setup (Docker)**
-```bash
+git clone https://github.com/your-username/task-management.git
+cd task-management
 docker-compose up --build
 ```
 
@@ -143,13 +127,13 @@ chmod +x cf_deploy.sh
 ```
 - AWS Deployment (LocalStack simulation)
 - Upload frontend to S3
+- Create Lambda. Backend and microservice not deployed due to LocalStack limitations
 - Use cloudformation.yml for infrastructure setup
 
 ---
 
 ## 🔄 CI/CD
-### GitHub Actions workflow includes:
-- Build & deploy frontend and backend to live-demo
+- GitHub Actions workflow includes build & deploy frontend, backend and microservice to live-demo
 
 ---
 
@@ -162,7 +146,7 @@ chmod +x cf_deploy.sh
 - Frontend: ```https://task-management-theta-sable-82.vercel.app```
 - Backend API: ```https://task-management-j216.onrender.com```
 - Rust Microservice: ```https://task-management-microservice-gbau.onrender.com```
-- Note: Due to free hosting limitations, live demos may occasionally be unavailable.
+- **Note: Due to free hosting limitations, live demos may occasionally be unavailable.**
 
 ---
 
