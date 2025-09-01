@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import axios from 'axios';
 import type { TaskItem } from "@/types/models";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export function useTasks() {
     const tasks = ref<TaskItem[]>([]);

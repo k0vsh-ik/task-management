@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TaskItem } from "@/types/models";
 
-const API_URL = import.meta.env.VITE_MICROSERVICE_URL;
+const API_URL = import.meta.env.VITE_MICROSERVICE_URL || "http://localhost:8080";
 
 defineProps<{ data: TaskItem[] }>();
 

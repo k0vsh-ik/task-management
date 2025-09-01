@@ -2,6 +2,8 @@ import { onMounted, onUnmounted } from "vue";
 import type { Ref } from "vue";
 import type { TaskItem } from "@/types/models";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 export function useTaskWS(
     taskList: Ref<TaskItem[]>,
     totalTasks: Ref<number>,
@@ -31,7 +33,7 @@ export function useTaskWS(
     };
 
     onMounted(() => {
-        const wsUrl = import.meta.env.VITE_API_URL.replace(/^http/, "ws") + "/ws/tasks";
+        const wsUrl = API_URL.replace(/^http/, "ws") + "/ws/tasks";
         socket = new WebSocket(wsUrl);
         socket.onmessage = handleMessage;
     });
