@@ -110,8 +110,7 @@ pytest -v
 #### Unit + E2E Tests
 ```bash
 cd frontend
-npm install   
-npx playwright install
+npm install  
 npm run test:unit 
 npm run test:e2e
 ```
